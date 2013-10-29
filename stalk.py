@@ -70,7 +70,12 @@ class Stalker:
 
     def update(self, data=None):
         if data is None:
-            data = requests.get(self.url).content
+            response = requests.get(self.url)
+            if response.status_code != 200:
+                logger.error("[%s] %s %s" % (self.url, x.status_code, x.reason))
+                logger.error("[%s] Skipping for now." % (self.url))
+                return
+            data = response.content
 
         proc = Popen(['diff', '-u', self.fn + '.saved', '-'], stdin=PIPE, stdout=PIPE)
         proc.stdin.write(data)
@@ -97,6 +102,11 @@ class Stalker:
         if self.has_last_modified:
             x = requests.head(self.url)
 
+            if x.status_code != 200:
+                logger.warn("[%s] %s %s" % (self.url, x.status_code, x.reason))
+                logger.warn("[%s] Skipping for now." % (self.url))
+                return
+
             new = parse_date(x.headers['Last-Modified'])
             old = None
             with open(self.fn + '.lastmod') as f:
@@ -110,6 +120,11 @@ class Stalker:
 
         elif self.has_content_length:
             x = requests.head(self.url)
+            if x.status_code != 200:
+                logger.warn("[%s] %s %s" % (self.url, x.status_code, x.reason))
+                logger.warn("[%s] Skipping for now." % (self.url))
+                return
+
             old = None
             with open(self.fn + '.length') as f:
                 old = f.read()
@@ -123,6 +138,11 @@ class Stalker:
 
         else:
             x = requests.get(self.url).content
+            if x.status_code != 200:
+                logger.warn("[%s] %s %s" % (self.url, x.status_code, x.reason))
+                logger.warn("[%s] Skipping for now." % (self.url))
+                return
+
             old = None
             with open(self.fn + '.saved', 'rb') as f:
                 old = sha1(f.read())
