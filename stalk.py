@@ -72,7 +72,7 @@ class Stalker:
         if data is None:
             response = requests.get(self.url)
             if response.status_code != 200:
-                logger.error("[%s] %s %s" % (self.url, x.status_code, x.reason))
+                logger.error("[%s] %s %s" % (self.url, response.status_code, response.reason))
                 logger.error("[%s] Skipping for now." % (self.url))
                 return
             data = response.content
@@ -137,7 +137,7 @@ class Stalker:
                 logger.info("[%s] No change in content length." % self.url)
 
         else:
-            x = requests.get(self.url).content
+            x = requests.get(self.url)
             if x.status_code != 200:
                 logger.warn("[%s] %s %s" % (self.url, x.status_code, x.reason))
                 logger.warn("[%s] Skipping for now." % (self.url))
@@ -146,10 +146,10 @@ class Stalker:
             old = None
             with open(self.fn + '.saved', 'rb') as f:
                 old = sha1(f.read())
-            new = sha1(x)
+            new = sha1(x.content)
             if old != new:
                 logger.info("[%s] SHA1 change detected!" % self.url)
-                self.update(x)
+                self.update(x.content)
             else:
                 logger.info("[%s] No change in SHA1." % self.url)
 
