@@ -1,0 +1,9 @@
+{
+  "from": "govstalk@example.com",
+  "to": "your@address.srsly",
+  "sleep": 300,
+  "path": ".",
+  "targets": [
+    {"url": "http://dfat.gov.au/fta/tpp/", "fn": "dfat-tpp"}
+  ]
+}
