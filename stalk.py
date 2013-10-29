@@ -56,13 +56,13 @@ class Stalker:
         self.has_content_length = head_result.headers.get('Content-Length') is not None
         self.has_last_modified = head_result.headers.get('Last-Modified') is not None
 
-        if self.has_content_length and not exists(fn + ".length"):
-            with open(self.fn + '.length', 'w') as f:
-                f.write(head_result.headers['Content-Length'])
-
-        elif self.has_last_modified and not exists(fn + ".lastmod"):
+        if self.has_last_modified and not exists(fn + ".lastmod"):
             with open(self.fn + '.lastmod', 'w') as f:
                 f.write(head_result.headers['Last-Modified'])
+
+        elif self.has_content_length and not exists(fn + ".length"):
+            with open(self.fn + '.length', 'w') as f:
+                f.write(head_result.headers['Content-Length'])
 
         if not exists(self.fn + ".saved"):
             with open(self.fn + '.saved', 'wb') as f:
@@ -94,20 +94,7 @@ class Stalker:
         logger.info("[%s] Email sent." % self.url)
 
     def stalk(self):
-        if self.has_content_length:
-            x = requests.head(self.url)
-            old = None
-            with open(self.fn + '.length') as f:
-                old = f.read()
-
-            if x.headers['Content-Length'] != old:
-                logger.info("[%s] Content length change detected! (%s, %s)" % (
-                    self.url, old, x.headers['Content-Length']))
-                self.update()
-            else:
-                logger.info("[%s] No change in content length." % self.url)
-
-        elif self.has_last_modified:
+        if self.has_last_modified:
             x = requests.head(self.url)
 
             new = parse_date(x.headers['Last-Modified'])
@@ -120,6 +107,19 @@ class Stalker:
                 self.update()
             else:
                 logger.info("[%s] No change in last modified." % self.url)
+
+        elif self.has_content_length:
+            x = requests.head(self.url)
+            old = None
+            with open(self.fn + '.length') as f:
+                old = f.read()
+
+            if x.headers['Content-Length'] != old:
+                logger.info("[%s] Content length change detected! (%s, %s)" % (
+                    self.url, old, x.headers['Content-Length']))
+                self.update()
+            else:
+                logger.info("[%s] No change in content length." % self.url)
 
         else:
             x = requests.get(self.url).content
@@ -144,6 +144,7 @@ if __name__ == "__main__":
         while True:
             for stalker in stalkers:
                 stalker.stalk()
+            logger.info("Sleeping for %s seconds." % cfg['sleep'])
             sleep(cfg['sleep'])
     except KeyboardInterrupt:
         sys.exit(0)
