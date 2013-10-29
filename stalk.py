@@ -70,7 +70,7 @@ class Stalker:
 
     def update(self, data=None):
         if data is None:
-            data = requests.get(self.url).text
+            data = requests.get(self.url).content
 
         proc = Popen(['diff', '-u', self.fn + '.saved', '-'], stdin=PIPE, stdout=PIPE)
         proc.stdin.write(data)
@@ -101,7 +101,8 @@ class Stalker:
                 old = f.read()
 
             if x.headers['Content-Length'] != old:
-                logger.info("[%s] Content length change detected!" % self.url)
+                logger.info("[%s] Content length change detected! (%s, %s)" % (
+                    self.url, old, x.headers['Content-Length']))
                 self.update()
             else:
                 logger.info("[%s] No change in content length." % self.url)
