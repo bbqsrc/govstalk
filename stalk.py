@@ -47,10 +47,11 @@ def parse_date(text):
 
 
 class Stalker:
-    def __init__(self, url, fn, config):
+    def __init__(self, url, fn, config, delete=None):
         self.url = url
         self.fn = config['path'] + '/' + fn
         self.config = config
+        self.delete = [d.encode() for d in delete] if delete is not None else None
 
         head_result = requests.head(url)
         self.has_content_length = head_result.headers.get('Content-Length') is not None
@@ -66,7 +67,10 @@ class Stalker:
 
         if not exists(self.fn + ".saved"):
             with open(self.fn + '.saved', 'wb') as f:
-                f.write(requests.get(self.url).content)
+                data = requests.get(self.url).content
+                if self.delete:
+                    data = self.delete_lines(data.split(b'\n'), self.delete)
+                f.write(data)
 
     def update(self, data=None):
         if data is None:
@@ -98,8 +102,44 @@ class Stalker:
         ))
         logger.info("[%s] Email sent." % self.url)
 
+    def delete_lines(self, lines, deletes):
+        o = []
+        for line in lines:
+            found = False
+
+            for d in deletes:
+                if d in line:
+                    logger.debug("Removed line: '%s'" % line.decode())
+                    found = True
+                    break
+
+            if found:
+                continue
+            o.append(line)
+
+        return b'\n'.join(o)
+
     def stalk(self):
-        if self.has_last_modified:
+        if self.delete is not None:
+            x = requests.get(self.url)
+            if x.status_code != 200:
+                logger.warn("[%s] %s %s" % (self.url, x.status_code, x.reason))
+                logger.warn("[%s] Skipping for now." % (self.url))
+                return
+
+            old = None
+            with open(self.fn + '.saved', 'rb') as f:
+                old = sha1(f.read())
+            
+            data = self.delete_lines(x.content.split(b'\n'), self.delete)
+            new = sha1(data)
+            if old != new:
+                logger.info("[%s] SHA1 change detected after deletes!" % self.url)
+                self.update(data)
+            else:
+                logger.info("[%s] No change in SHA1." % self.url)
+
+        elif self.has_last_modified:
             x = requests.head(self.url)
 
             if x.status_code != 200:
@@ -158,7 +198,7 @@ if __name__ == "__main__":
     cfg = json.load(open(sys.argv[1]))
     stalkers = []
     for target in cfg['targets']:
-        stalkers.append(Stalker(target['url'], target['fn'], cfg))
+        stalkers.append(Stalker(target['url'], target['fn'], cfg, target.get('delete')))
 
     try:
         while True:

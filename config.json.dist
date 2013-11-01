@@ -4,6 +4,11 @@
   "sleep": 300,
   "path": ".",
   "targets": [
-    {"url": "http://dfat.gov.au/fta/tpp/", "fn": "dfat-tpp"}
+    {"url": "http://dfat.gov.au/fta/tpp/", "fn": "dfat-tpp"},
+    {
+        "url": "http://www.ag.gov.au/Consultations/Pages/default.aspx",
+        "fn": "agconsult",
+        "delete": ["__REQUESTDIGEST"]
+    }
   ]
 }
