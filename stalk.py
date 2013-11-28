@@ -74,7 +74,12 @@ class Stalker:
 
     def update(self, data=None):
         if data is None:
-            response = requests.get(self.url)
+            try:
+                response = requests.get(self.url)
+            except Exception as e:
+                logger.error(e)
+                return
+
             if response.status_code != 200:
                 logger.error("[%s] %s %s" % (self.url, response.status_code, response.reason))
                 logger.error("[%s] Skipping for now." % (self.url))
@@ -121,7 +126,12 @@ class Stalker:
 
     def stalk(self):
         if self.delete is not None:
-            x = requests.get(self.url)
+            try:
+                x = requests.get(self.url)
+            except Exception as e:
+                logger.error(e)
+                return
+
             if x.status_code != 200:
                 logger.warn("[%s] %s %s" % (self.url, x.status_code, x.reason))
                 logger.warn("[%s] Skipping for now." % (self.url))
@@ -140,7 +150,11 @@ class Stalker:
                 logger.info("[%s] No change in SHA1." % self.url)
 
         elif self.has_last_modified:
-            x = requests.head(self.url)
+            try:
+                x = requests.head(self.url)
+            except Exception as e:
+                logger.error(e)
+                return
 
             if x.status_code != 200:
                 logger.warn("[%s] %s %s" % (self.url, x.status_code, x.reason))
@@ -159,7 +173,12 @@ class Stalker:
                 logger.info("[%s] No change in last modified." % self.url)
 
         elif self.has_content_length:
-            x = requests.head(self.url)
+            try:
+                x = requests.head(self.url)
+            except Exception as e:
+                logger.error(e)
+                return
+
             if x.status_code != 200:
                 logger.warn("[%s] %s %s" % (self.url, x.status_code, x.reason))
                 logger.warn("[%s] Skipping for now." % (self.url))
@@ -177,7 +196,12 @@ class Stalker:
                 logger.info("[%s] No change in content length." % self.url)
 
         else:
-            x = requests.get(self.url)
+            try:
+                x = requests.get(self.url)
+            except Exception as e:
+                logger.error(e)
+                return
+
             if x.status_code != 200:
                 logger.warn("[%s] %s %s" % (self.url, x.status_code, x.reason))
                 logger.warn("[%s] Skipping for now." % (self.url))
